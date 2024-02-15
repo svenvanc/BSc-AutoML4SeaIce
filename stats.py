@@ -1,35 +1,26 @@
-import math
-import os.path
+
+
+# -- Built-in modules -- #
 import os
-import scipy
+import math
+
+# -- Third-party modules -- #
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
-from init import OPTIONS
 from tensorflow import keras
 
+# --Proprietary modules -- #
+from init import OPTIONS
 
 
-# experiment_name = 'first_large_experiment'
-# experiment_name = 'small_experiment'
-# experiment_name = 'kerasTuner-20-a'
 experiment_name = os.getenv('EXP_NAME')
 input_type = os.getenv('INPUT_TYPE')
 print("Python file, the experiment name is: ", experiment_name, ".")
 print("Python file, the data type is: ", input_type, ".")
 
 path_to_data = '/home/s2358093/data1/seaice_npy'
-# path_to_image_storing = '/home/s2358093/data1/res_sven/images/' + experiment_name + '_128'
 path_to_image_storing = '/home/s2358093/data1/res_sven/images/multiple_r2_experiments/' + experiment_name
-
-
-# path_to_data = '/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/'
-# path_to_image_storing = '/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/images'
-# unet_model = keras.models.load_model('/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/kerasTuner/kerasTuner-20-a')
-
-# validate_names = [
-#     '20181212T205512'
-# ]
 
 validate_names = [
     "20180315T184323",
@@ -77,19 +68,8 @@ ICE_STRINGS = {
     'FLOE': 'Floe Size'
 }
 
-# https://stackoverflow.com/questions/35751306/python-how-to-pad-numpy-array-with-zeros
 def get_patch(x, y):
-    # patch_size = 4000
-    # patch_size = 1040
-    # patch_size = 512
     n_rows, n_cols = y.shape
-    # print(n_rows, n_cols)
-
-
-    # rows_to_use = (n_rows // 256) * 256
-    # cols_to_use = (n_cols // 256) * 256
-    # x1 = x[:rows_to_use, :cols_to_use, :]
-    # y1 = y[:rows_to_use, :cols_to_use]
 
     rows_to_add = 0
     cols_to_add = 0
@@ -101,8 +81,6 @@ def get_patch(x, y):
     x1 = np.pad(x, [(0, rows_to_add), (0, cols_to_add), (0, 0)], mode='constant', constant_values=0)
     y1 = np.pad(y, [(0, rows_to_add), (0, cols_to_add)], mode='constant', constant_values=0)
 
-    # x1 = x[row:row + patch_size, col:col + patch_size, :]
-    # y1 = y[row:row + patch_size, col:col + patch_size]
     y1 = np.expand_dims(y1, axis=-1)
     return x1, y1
 
@@ -117,8 +95,8 @@ def get_prediction(model, x):
 def apply_unknown_mask_to_y(x, y):
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
-    # mask = mask[:, :, :, 1:2]
     mask = np.squeeze(mask)
+
     y[mask] = 11
 
 
@@ -126,6 +104,7 @@ def apply_unknown_mask_to_y_to_255(x, y):
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
     mask = np.squeeze(mask)
+
     y[mask] = 255
 
 
@@ -190,15 +169,6 @@ def plot_scene(x, y, prediction, name):
 
 
 def calc_r2(actual, prediction, mean):
-    # corr_matrix = np.corrcoef(actual, prediction)
-    # corr = corr_matrix[0, 1]
-    # R_sq = corr ** 2
-    # print(R_sq, flush=True)
-
-    # slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(actual, prediction)
-    # R_sq = r_value ** 2
-    # print(R_sq, flush=True)
-
     rss = np.sum((actual - prediction) ** 2)
     tss = np.sum((actual - mean) ** 2)
 
@@ -213,9 +183,7 @@ def calc_r2(actual, prediction, mean):
 def generate_stats(model, file_name, mean):
     full_file_name = os.path.join(path_to_data, file_name)
 
-    # TODO make sure its sar or nersc
     x = np.load(full_file_name + f'-{input_type}-x.npy')
-    # x = np.load(full_file_name + '-nersc-x.npy')
     y = np.load(full_file_name + '-y.npy')
 
     x1, y1 = get_patch(x, y)
@@ -249,9 +217,8 @@ total_value = 0
 total_elements = 0
 for file_name in validate_names:
     full_file_name = os.path.join(path_to_data, file_name)
-    # TODO make sure its sar or nersc
+
     x = np.load(full_file_name + f'-{input_type}-x.npy')
-    # x = np.load(full_file_name + '-nersc-x.npy')
     y = np.load(full_file_name + '-y.npy')
 
     x = np.expand_dims(x, axis=0)
@@ -264,7 +231,7 @@ for file_name in validate_names:
     total_elements += y_flattened.shape[0]
     total_value += np.sum(y_flattened)
 
-mean = total_value / total_elements                 # TODO should this be rounded?
+mean = total_value / total_elements
 print("The mean is: ", mean, flush=True)
 
 
@@ -292,7 +259,6 @@ def calc_model(model):
     print("\nThe total accuracy score is: ", acc, flush=True)
     print("\nThe total RMSE score is: ", rmse, flush=True)
     print("\nThe total R2 score is: ", r2, flush=True)
-
 
 
 unet_model = keras.models.load_model('/home/s2358093/data1/res_sven/model_results/multiple_r2_experiments/' + experiment_name, compile=False)

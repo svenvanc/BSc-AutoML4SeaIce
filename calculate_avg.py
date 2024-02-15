@@ -1,20 +1,15 @@
-
-"""Train function for models. Data is loaded using ASIP2Dataset. Validated using validate.py."""
 """
+Calculated the mean of the training files, then uses this mean (and the rounded value of this mean)
+as a prediction for the validate files.
 
-This one is using
-* distribution_strategy=tf.distribute.MirroredStrategy(),
-* multiple CPU / GPU
-* batch size 32
+Files are read using the data paths set in init.py
 
-Result:
-* from 1050 to 915 sec per epoch  (not that much)
-* giving an error: AUTO sharding policy will apply DATA sharding policy as it failed to apply FILE sharding polic
-* see file:  kerasTunerTest-03_1444688.err
-
-============ compared to -02
-* loading all patches from 1 file. To avoid disk congestion, just to test
-* using flat_map
+Prints the following statistics:
+    - R2
+    - RMSE
+    - rounded R2 (uses rounded mean)
+    - rounded RMSE (uses rounded mean)
+    - accuracy (uses rounded mean)
 """
 
 
@@ -26,14 +21,15 @@ from sklearn.metrics import r2_score, mean_squared_error
 
 # --Proprietary modules -- #
 from functions.data_functions import get_scene_lists
-from routines.loaders import ASIP2Dataset, InfDataset
+from routines.loaders import InfDataset
 from init import OPTIONS
 
 
 def remove_land_values(y_actual):
-    y_actual = [item for sublist in y_actual for item in sublist]  # flatten the map dimensions (the first two dimensions)
+    # flatten the map dimensions (the first two dimensions)
+    y_actual = [item for sublist in y_actual for item in sublist]
 
-    return list(filter(lambda a: a != 11, y_actual))            # takes 1 second
+    return list(filter(lambda a: a != 11, y_actual))
 
 
 def calculate_mean(options):
@@ -108,20 +104,6 @@ def predict(options, prediction):
 
 
 def main(options: dict):
-    """
-    Model train function. Setup optimizer, dataset, dataloader, trains and validates model.
-
-    Parameters
-    ----------
-    bins_w :
-        Tensor with the weight bins.
-    net :
-        PyTorch model; Convolutional Neural Network to train.
-    device :
-        torch device: GPU or CPU used for computation.
-    options : dict
-        Dictionary with options for the training environment.
-    """
     # Get training and validation scene list
     options['train_list'], options['validate_list'] = get_scene_lists()
 

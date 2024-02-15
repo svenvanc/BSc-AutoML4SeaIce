@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """File initiating scene variables, paths to files etc. and options used for training models."""
 
 # -- File info -- #
@@ -16,7 +13,6 @@ import time
 # -- Third-party modules -- #
 import matplotlib.pyplot as plt
 import numpy as np
-# from torch import nn
 from functions.utils import SIC_LOOKUP, SOD_LOOKUP, FLOE_LOOKUP, get_dict_int_values
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -28,11 +24,7 @@ os.makedirs('misc/scene_pro_bins/', exist_ok=True)
 # Model Training options
 OPTIONS = {
     # -- Paths to data
-    # 'path_to_data': '/home/svenvanc/Universiteit_Leiden/Bachelor_Project/ncfiles',
-    # 'path_to_data': '/home/s2358093/data1/seaice_test',
     'path_to_data': '/home/s2358093/data1/seaice_source',
-    # 'path_to_processed_data': '/home/svenvanc/Universiteit_Leiden/Bachelor_Project/ncprocessed',
-    # 'path_to_processed_data': '/home/s2358093/data1/seaice_test_preprocessed',
     'path_to_processed_data': '/home/s2358093/data1/seaice_preprocessed',
 
     # -- Training options -- #
@@ -40,6 +32,7 @@ OPTIONS = {
     'batch_size': 32,  # number of patches for each forward/backward pass
     'epochs': 2,  # number of epochs to train
     'epoch_len': 100,  # number of batches in each epoch
+
     # variables to train on, should be np.array
     'train_variables': np.array(('nersc_sar_primary', 'nersc_sar_secondary')),
     'num_workers': 1,  # number of threads used in the data loader

@@ -1,8 +1,13 @@
+
+# -- Built-in modules -- #
 import os
 from os import listdir
+
+# -- Third-party modules -- #
 import numpy as np
 import xarray as xr
 
+# TODO new: dont hardcode paths
 read_path = '/home/s2358093/data1/seaice_preprocessed'
 write_path = '/home/s2358093/data1/seaice_npy'
 

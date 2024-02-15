@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Functions to be used for preprocessing ASIP2 scenes."""
 
 # -- File info -- #
@@ -17,8 +14,6 @@ import os
 # -- Third-party modules -- #
 import numpy as np
 import xarray as xr
-# import torch
-# from torch.utils.data import Dataset
 
 # -- Proprietary modules -- #
 from functions.utils import convert_polygon_icechart, CHARTS

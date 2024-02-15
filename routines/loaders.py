@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Pytorch Dataset class for training. Function used in train.py."""
 
 # -- File info -- #
@@ -171,10 +168,8 @@ class ASIP2Dataset:
             try:
                 scene_id = self.options['sampling_weight'].multinomial(num_samples=1)
             except KeyError:
-                # Todo added [0] because array got returned instead of integer
                 scene_id = np.random.randint(low=0, high=len(self.files), size=(1,))[0]
 
-            # path = os.path.join(self.options['path_to_processed_data'], self.files[scene_id])
             # - Load scene
             scene = xr.open_dataset(os.path.join(self.options['path_to_processed_data'],
                                                  self.files[scene_id]))
@@ -210,9 +205,8 @@ class ASIP2Dataset:
                     # -- Update the index
                     sample_n += len(scene_patches)
 
-        # Todo why do a double data augment?
+        # TODO new could do a data augment
         # Augment patches
-        # patches = self.data_augment(patches)          # Todo was on
         # patches = self.data_augment(patches)
 
         # Prepare training arrays
@@ -296,6 +290,5 @@ class InfDataset:
 
         # Todo is this necessary? -> needs testing
         scene.close()
-        # print("scene closed", flush=True)
         return x, y, mask, name, flip
 

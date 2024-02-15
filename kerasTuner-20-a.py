@@ -1,33 +1,20 @@
-# -*- coding: utf-8 -*-
 """
 
-This one is using
-* distribution_strategy=tf.distribute.MirroredStrategy(),
-* multiple CPU / GPU
-* batch size 32
-
-Result:
-* from 1050 to 915 sec per epoch  (not that much)
-* giving an error: AUTO sharding policy will apply DATA sharding policy as it failed to apply FILE sharding polic
-* see file:  kerasTunerTest-03_1444688.err
-
-============ compared to -02
-* loading all patches from 1 file. To avoid disk congestion, just to test
-* using flat_map
 """
 
-
-import os.path
+# -- Built-in modules -- #
 import os
-from dotenv import load_dotenv
+
+# -- Third-party modules -- #
+import random
+import numpy as np
 import tensorflow as tf
+import keras_tuner as kt
+from dotenv import load_dotenv
 from tensorflow import keras
 from keras import models, layers
-import keras_tuner as kt
-from keras_tuner.engine import trial as trial_module
-import numpy as np
-import random
 from keras import backend as K
+from keras_tuner.engine import trial as trial_module
 
 load_dotenv()  # take environment variables from .env.
 
@@ -63,8 +50,8 @@ def get_scene_lists(scene_name_orig: bool = False):
     list_path = '/home/s2358093/AutoML4SeaIce/datalists'
 
     train_list = np.loadtxt(list_path + '/train_alice.txt', dtype=str)
-    # validate_list = set(np.loadtxt('./datalists/validate_list.txt', dtype=str))
     validate_list = set(np.loadtxt(list_path + '/validate_alice.txt', dtype=str))
+
     # - Add extra validation scenes
     if 'validate_list_extra.txt' in os.listdir(list_path):
         validate_list |= set(np.loadtxt(list_path + '/validate_list_extra.txt', dtype=str))
@@ -593,7 +580,6 @@ mean = calc_mean()
 
 tuner = CustomBayesianSearch(
     hypermodel=MyHyperModel(mean),
-    # objective=kt.Objective("val_accuracy", direction="max"),
     objective=kt.Objective("val_sparse_r_squared", direction="max"),
     max_trials=MAX_TRIALS,
     distribution_strategy=tf.distribute.MirroredStrategy(),

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Validate function for models. Data is loaded using InfDataset."""
 
 # -- File info -- #
@@ -18,12 +15,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import seaborn as sns
 from sklearn.metrics import r2_score, confusion_matrix, plot_confusion_matrix
 from torch.utils.data import DataLoader
 
 # -- Proprietary modules -- #
-from functions.data_functions import labels_to_one_hot
 from functions.loss_functions import get_loss_function
 from functions.validation_functions import calc_stats, visualize_gan_patches, print_validation_stats, val_final_layer
 from functions.visualization_functions import show_pixel_count, show_chart_colorbar

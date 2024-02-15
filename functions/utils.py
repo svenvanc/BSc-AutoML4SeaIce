@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Utility functions."""
 
 # -- File info -- #
@@ -18,11 +15,6 @@ import os
 
 # -- Third-party modules -- #
 import numpy as np
-# import torch
-# import xarray as xr
-
-# -- Proprietary modules -- #
-# from models.unet import UNet #Todo off
 
 # Colour dictionary
 COLOURS = {'red': '\033[0;31m',
@@ -385,76 +377,3 @@ def print_options(options, net=None):
             for n in net:
                 writer.writerow(['net', n])
 
-
-def get_gpu_resources(gpu_ids: list, net):
-    """
-    Allocate device to net and get GPU and cpu resources.
-
-    Parameters
-    ----------
-    gpu_ids : List[int]
-        List with the indices of GPU devices to be used
-    net :
-        PyTorch model.
-
-    Returns
-    -------
-    net :
-        PyTorch model.
-    device : torch.device
-        Main GPU device.
-    """
-    # GPU
-    # if torch.cuda.is_available(): # Todo off
-    #     print(colour_str('GPU available!', 'green'))
-    #     print('Total number of available devices: ', colour_str(torch.cuda.device_count(), 'orange'))
-    #     device = torch.device(f'cuda:{gpu_ids[0]}')
-    #     net.to(device)
-    # 
-    #     # - Check how many GPUs are going to be used
-    #     if len(gpu_ids) > 1:
-    #         print('Running on', colour_str('multiple', 'orange'), 'GPUs:')
-    #         net = torch.nn.DataParallel(net, device_ids=gpu_ids)
-    #     elif len(gpu_ids) == 1:
-    #         print('Running on a', colour_str('single', 'orange'), 'GPU:')
-    # 
-    #     # - Print GPU IDs and names
-    #     for idx in gpu_ids:
-    #         print('\t\tID:', colour_str(idx, 'blue') + ', name:', colour_str(torch.cuda.get_device_name(idx), 'purple'))
-    # 
-    # # CPU
-    # else:
-    #     print(colour_str('GPU devices not available. Running on the CPU.', 'red'))
-    #     device = torch.device('cpu')
-    #     net = net.to(device)
-    # 
-    # print('\n')
-
-    net = None
-    device = None
-    return net, device
-
-
-
-def get_nets(options: dict):
-    """
-    Get the network to train.
-    Parameters
-    ----------
-    options : dict
-        Options dictionary.
-
-    Returns
-    -------
-    nets :
-        A network to train, for `unet` and `resunet`, or a list of networks: [generator_xy, generator_yx,
-        discriminator_x, discriminator_y] for `gan`.
-    """
-    titles = {'unet': 'U-Net', 'resunet': 'Residual U-Net', 'gan': 'CycleGAN'}
-    assert options['architecture'] in titles.keys(), colour_str('Architecture not yet implemented!', 'red')
-
-    print('Using the', colour_str(titles[options['architecture']], 'purple'), 'architecture.\n')
-
-    if options['architecture'] == 'unet':
-        # return UNet(options=options) #Todo off
-        return None

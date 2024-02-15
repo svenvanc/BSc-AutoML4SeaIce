@@ -1,104 +1,25 @@
-# -*- coding: utf-8 -*-
 """
 
-This one is using
-* distribution_strategy=tf.distribute.MirroredStrategy(),
-* multiple CPU / GPU
-* batch size 32
-
-Result:
-* from 1050 to 915 sec per epoch  (not that much)
-* giving an error: AUTO sharding policy will apply DATA sharding policy as it failed to apply FILE sharding polic
-* see file:  kerasTunerTest-03_1444688.err
-
-============ compared to -02
-* loading all patches from 1 file. To avoid disk congestion, just to test
-* using flat_map
-
-============ version 06
-* using flat_map loader
-* using all data, unlimited nr pf patches
-
-=========== compared to 06 version
-* use unbatch based loader
-
-=========== compared to 07 version
-* create scene loader to use complete scenes for validation set
-* more generic set_shape
-* 50 epochs
-
-=========== compared to 08 version
-* back to normal loader for validation set
-
-= 10 ========== compared to 09 version
-* shuffle
-* back to previous set_shape
-* 100 epochs
-
-= 11 ========== compared to 10 version
-* nersc-x data
-* 50 epochs
-
-= 12 ========== compared to 11 version
-* 3 models, 2 model added
-  * 4 layer (as before)
-  * 5 layer
-  * 6 layer
-
-=13 ========= compared to 12 version
-* mask all pixels with 0 for both x1 and x2 with y value 11 (=unknown)
-  introduces `invalid_pixels_mask`
-* one cpu, one gpu,
-* 5 layers, one trial
-* distribution_strategy disabled
-* tf.data.experimental.AutoShardPolicy.DATA disabled
-
-= b ========== compared to 13-a ========
-* weights removed
-* 50 epochs
-* 2 cpu / 2 gpu
-* distribution_strategy enabled to run on multiple gpus
-* tf.data.experimental.AutoShardPolicy.DATA enabled
-
-= parallel 02 =========== c
-* small changes. Used to test with chief / workers on Alice
-
-= parallel 03 =========== compared with parallel 02 =
-Override GridSearch, to check if a worker can stop after 1 trail
-
-= parallel 04 =========== compared with parallel 03 =
-* Bayesian
-* Learning rate in search space
-* Tensorboard output to show learning curve
-* Successful run with 25 EPOCHS and 10 TRIALS on ALICE
-
-= kerasTuner-20 ========= compared with parallel 04==
-* add PatchSize and BatchSize to search space
-
 """
-
-import os.path
+# -- Built-in modules -- #
 import os
-from dotenv import load_dotenv
+
+# -- Third-party modules -- #
+import random
+import numpy as np
 import tensorflow as tf
+import keras_tuner as kt
+from dotenv import load_dotenv
 from tensorflow import keras
 from keras import models, layers
-import keras_tuner as kt
-from keras_tuner.engine import trial as trial_module
-import numpy as np
-import random
 from keras import backend as K
+from keras_tuner.engine import trial as trial_module
 
 load_dotenv()  # take environment variables from .env.
 
-# qwqwq
-# project_name = 'first_large_experiment'
 project_name = 'r2_large_experiment'
 
-
 print(tf.__version__, flush=True)
-
-
 root_dir = os.getenv('OUTPUT_DIR')
 result_model_dir = f'{root_dir}/model_results/{project_name}'
 tensorboard_dir = f'{root_dir}/tensorboard/{project_name}'
@@ -107,8 +28,6 @@ search_results_dir = f'{root_dir}/search_results'
 
 # Charts in the dataset
 CHARTS = ['SIC']
-# CHARTS = ['SIC', 'SOD', 'FLOE']
-
 path_to_data = os.getenv('PATH_TO_DATA')
 
 
@@ -139,7 +58,6 @@ def get_scene_lists(scene_name_orig: bool = False):
     list_path = '/home/s2358093/AutoML4SeaIce/datalists'
 
     train_list = np.loadtxt(list_path + '/train_alice.txt', dtype=str)
-    # validate_list = set(np.loadtxt('./datalists/validate_list.txt', dtype=str))
     validate_list = set(np.loadtxt(list_path + '/validate_alice.txt', dtype=str))
     # - Add extra validation scenes
     if 'validate_list_extra.txt' in os.listdir(list_path):
@@ -223,26 +141,6 @@ SCENE_VARIABLES = [
     'sar_secondary',
     # 'nersc_sar_primary',
     # 'nersc_sar_secondary',
-
-
-    # 'sar_incidenceangle',
-    #
-    # # -- Geographical variables -- #
-    # 'distance_map',
-    #
-    # # -- AMSR2 channels -- #
-    # 'btemp_6_9h', 'btemp_6_9v',
-    # 'btemp_7_3h', 'btemp_7_3v',
-    # 'btemp_10_7h', 'btemp_10_7v',
-    # 'btemp_18_7h', 'btemp_18_7v',
-    # 'btemp_23_8h', 'btemp_23_8v',
-    # 'btemp_36_5h', 'btemp_36_5v',
-    # 'btemp_89_0h', 'btemp_89_0v',
-    #
-    # # -- Environmental variables -- #
-    # 'u10m_rotated', 'v10m_rotated',
-    # 't2m', 'skt', 'tcwv', 'tclw'
-    #
 ]
 
 ICE_STRINGS = {
@@ -378,13 +276,6 @@ def set_shapes_with_weights_factory(patch_size):
         return x, y, weights
 
     return set_shapes
-
-# def set_shapes(x, y, weights):
-#     # print('x.shape', x.shape, flush=True)
-#     x.set_shape((PATCH_SIZE, PATCH_SIZE, 2))
-#     y.set_shape((PATCH_SIZE, PATCH_SIZE, 1))
-#     weights.set_shape((PATCH_SIZE, PATCH_SIZE, 1))
-#     return x, y, weights
 
 
 def extract_patch(x, y, patch, patch_size):
@@ -559,36 +450,22 @@ class MyHyperModel(kt.HyperModel):
         # image_size=(PATCH_SIZE, PATCH_SIZE)
         n_channels = len(SAR_VARIABLES)
         inputs = keras.Input(shape=(image_size[0], image_size[1], n_channels))
-        # filters = hp.Int(name='filters', min_value=64, max_value=96, step=16)
 
         num_layers = hp.Int(name='num_layers', min_value=4, max_value=8, step=1)
         learning_rate = hp.Choice(name='learning_rate', values=[0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1])
         dropout = hp.Choice(name='dropout', values=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
         max_layer_size = hp.Choice(name='max_layer_size', values=[32, 64, 128])
-        hp.Choice(name='patch_size', values=[768])              #Todo uit hp.choice halen voor minder random search in algoritme
+        hp.Choice(name='patch_size', values=[768])      #Todo uit hp.choice halen
         hp.Choice(name='batch_size', values=[16])
         hp.Choice(name='load_data_randomly', values=[False, True])
         hp.Choice(name='noise_reduction', values=['sar', 'nersc'])
         hp.Choice(name='apply_weights', values=['None', 'Ignore_11', 'Custom_weights'])
-
-        # num_layers = hp.Int(name='num_layers', min_value=7, max_value=7, step=1)
-        # learning_rate = hp.Choice(name='learning_rate', values=[0.0001])
-        # dropout = hp.Choice(name='dropout', values=[0.3, 0.4, 0.5, 0.6])
-        # max_layer_size = hp.Choice(name='max_layer_size', values=[32])
-        # hp.Choice(name='patch_size', values=[512, 768])
-        # hp.Choice(name='batch_size', values=[16, 32])
-        # hp.Choice(name='load_data_randomly', values=[False])
-        # hp.Choice(name='noise_reduction', values=['nersc'])
-        # hp.Choice(name='apply_weights', values=['None'])
 
         base_filter = [16, 32]
         if max_layer_size == 128:
             base_filter.append(64)
         extra_filters = [max_layer_size for n in range(num_layers - len(base_filter))]
         filter_values = base_filter + extra_filters
-
-        # filter_values = [16, 32, 64, 64]
-        # # filter_values = [16, 32, 64, 64, 64, 64]
 
         # downsample
         down_layers = []
@@ -614,84 +491,16 @@ class MyHyperModel(kt.HyperModel):
         unet_model = tf.keras.Model(inputs, outputs, name="U-Net")
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        # loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-        # loss = keras.losses.SparseCategoricalCrossentropy()
-        # loss = keras.losses.SparseCategoricalCrossentropy(ignore_class=11)
-        # weighted_cross_entropy
-        # https://stackoverflow.com/questions/69820462/keras-weighted-metrics-does-not-include-sample-weights-in-calculation
         mean = calc_mean()
         metric = R2_Score(mean)
         unet_model.compile(
             optimizer=optimizer,
-            # loss=loss,
             loss="sparse_categorical_crossentropy",
-            # loss=tf.keras.losses.categorical_crossentropy,
-            # weighted_metrics=[tf.keras.losses.categorical_crossentropy],
-            # weighted_metrics=[],
             metrics=[metric, "accuracy"],
-            # metrics=["r2_score"],
         )
 
         return unet_model
-
-    # # def fit(self, hp, model, train_data, *args, validation_data=None, **kwargs):
-    # def fit(self, hp, model, *args, **kwargs):
-    # 
-    #     # Values has to be at least 1 value but remains unused. The value from the build function is used.
-    #     patch_size = hp.Choice(name='patch_size', values=[0])
-    #     batch_size = hp.Choice(name='batch_size', values=[0])
-    #     load_data_randomly = hp.Choice(name='load_data_randomly', values=[0])
-    #     noise_reduction = hp.Choice(name='noise_reduction', values=[0])
-    #     apply_weights = hp.Choice(name='apply_weights', values=[0])
-    # 
-    #     print('#### TRAIN WITH', patch_size, batch_size, load_data_randomly)
-    # 
-    #     options = tf.data.Options()
-    #     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    # 
-    #     train_dataset = get_data_set(path_to_data, train_list, patch_size, N_TRAIN_PATCHES, load_data_randomly, noise_reduction, apply_weights, shuffle=True)
-    #     train_dataset = train_dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
-    #     train_dataset = train_dataset.with_options(options)
-    # 
-    #     val_dataset = get_data_set(path_to_data, val_list, patch_size, N_VAL_PATCHES, load_data_randomly, noise_reduction, apply_weights, shuffle=False)
-    #     val_dataset = val_dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
-    #     val_dataset = val_dataset.with_options(options)
-    #     return model.fit(train_dataset, *args, validation_data=val_dataset, **kwargs)
-
-    # def fit(self, hp, model, train_data, *args, validation_data=None, **kwargs):
-    # def fit(self, hp, model, *args, **kwargs):
-    #
-    #     patch_size = hp.Choice(name='patch_size', values=[512, 768])
-    #     batch_size = hp.Choice(name='batch_size', values=[16, 32])
-    #
-    #     print('#### TRAIN WITH', patch_size, batch_size)
-    #
-    #     options = tf.data.Options()
-    #     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    #
-    #     train_dataset = get_data_set(path_to_data, train_list, patch_size, N_TRAIN_PATCHES, shuffle=True)
-    #     train_dataset = train_dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
-    #     train_dataset = train_dataset.with_options(options)
-    #
-    #     val_dataset = get_data_set(path_to_data, val_list, patch_size, N_VAL_PATCHES, shuffle=False)
-    #     val_dataset = val_dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
-    #     val_dataset = val_dataset.with_options(options)
-    #     return model.fit(train_dataset, *args, validation_data=val_dataset, **kwargs)
-    #
-
-
-# tuner = kt.BayesianOptimization(
-#     hypermodel=MyHyperModel(),
-#     objective=kt.Objective("val_accuracy", direction="max"),       # TODO train acc
-#     max_trials=MAX_TRIALS,
-#     distribution_strategy=tf.distribute.MirroredStrategy(),
-#     directory=search_results_dir,
-#     project_name=project_name,
-#     max_retries_per_trial=1,
-#     overwrite=False,
-#     # overwrite=True,
-# )
 
 
 class CustomBayesianSearch(kt.BayesianOptimization):
@@ -734,7 +543,6 @@ class CustomBayesianSearch(kt.BayesianOptimization):
 
 tuner = CustomBayesianSearch(
     hypermodel=MyHyperModel(),
-    # objective=kt.Objective("val_accuracy", direction="max"),       # TODO minimize validation loss?
     objective=kt.Objective("val_sparse_r_squared", direction="max"),
     max_trials=MAX_TRIALS,
     distribution_strategy=tf.distribute.MirroredStrategy(),
@@ -742,7 +550,6 @@ tuner = CustomBayesianSearch(
     project_name=project_name,
     max_retries_per_trial=1,
     overwrite=False,
-    # overwrite=True,
 )
 
 print('loading done...')

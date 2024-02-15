@@ -1,14 +1,25 @@
+"""
+Calculated the mean of the training files, then uses this mean (and the rounded value of this mean)
+as a prediction for the validate files.
+
+Files are read using the data paths set in init.py
+
+Prints the following statistics:
+    - R2
+    - RMSE
+    - rounded R2 (uses rounded mean)
+    - rounded RMSE (uses rounded mean)
+    - accuracy (uses rounded mean)
+"""
+
+# -- Third-party modules -- #
 import matplotlib.pyplot as plt
-from matplotlib import colors
-import xarray as xr
-# from init import OPTIONS
-from init_laptop import OPTIONS
-
 import numpy as np
+import xarray as xr
+from matplotlib import colors
 
-# links :
-# - https://stackoverflow.com/questions/38487440/python-how-to-make-colorbar-orientation-horizontal
-
+# --Proprietary modules -- #
+from init_laptop import OPTIONS
 
 # Names of the SIC classes.
 SIC_GROUPS = {
@@ -33,13 +44,6 @@ ICE_STRINGS = {
 }
 
 def plotmap_ESA2(values):
-    # fig_output = plt.figure()
-
-
-    # output = np.flip(output, flip)
-    # plt.imshow(values, vmin=OPTIONS['vmin'][OPTIONS['chart']], vmax=OPTIONS['vmax'][OPTIONS['chart']],
-    #            cmap=OPTIONS['cmap'][OPTIONS['chart']])
-
     fig, axs = plt.subplots(nrows=1, ncols=2,
                             # figsize=(12, 8)
                             )
@@ -47,28 +51,17 @@ def plotmap_ESA2(values):
     axs[0].imshow(values, vmin=OPTIONS['vmin'][OPTIONS['chart']], vmax=OPTIONS['vmax'][OPTIONS['chart']],
                cmap=OPTIONS['cmap'][OPTIONS['chart']])
 
-    # Domt use, also removes border
-    # axs[0].axis('off')
     axs[0].set_xticks([])
     axs[0].set_yticks([])
-
-    # chart_cbar(ax=axs[0], n_classes=n_classes, chart='SIC', cmap=cmap)  # Creates colorbar with ice class names.
 
     axs[1].imshow(values, vmin=OPTIONS['vmin'][OPTIONS['chart']], vmax=OPTIONS['vmax'][OPTIONS['chart']],
                cmap=OPTIONS['cmap'][OPTIONS['chart']])
 
-    # Domt use, also removes border
-    # axs[1].axis('off')
     axs[1].set_xticks([])
     axs[1].set_yticks([])
 
-    # Dont do this, images further apart.
-    # plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0.05, hspace=0)
     plt.subplots_adjust(wspace=0.05)
-    # plt.rcParams['axes.linewidth'] = 0.1  # set the value globally
 
-    # a = OPTIONS['n_classes']['SIC']
-    # arranged = np.arange(0, OPTIONS['n_classes']['SIC'])
     arranged = np.arange(0, len(SIC_GROUPS.values()))
     ncolor = OPTIONS['cmap'][OPTIONS['chart']].N
     norm = colors.BoundaryNorm(arranged - 0.5, ncolor)  # Get colour boundaries. -0.5 to center ticks for each color.
@@ -118,8 +111,8 @@ def plotmap_ESA2(values):
 def apply_unknown_mask_to_y(x, y):
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
-    # mask = mask[:, :, :, 1:2]
     mask = np.squeeze(mask)
+
     y[mask] = 11
 
 
@@ -127,6 +120,7 @@ def apply_unknown_mask_to_y_to_255(x, y):
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
     mask = np.squeeze(mask)
+
     y[mask] = 255
 
 
@@ -225,63 +219,16 @@ if __name__ == '__main__':
     y2 = np.load(name)
     namex = '20181212T205512-nersc-x.npy'
     x = np.load(namex)
-    
+
     cond = x == 0.0
     cond = cond[:, :, 0]
-    
+
     cond2 = x == 0.0
     cond2 = cond2[:, :, 1]
-    
+
     y[cond] = 110.0
     y2[cond2] = 110.0
-    
-    # y2 = y2.astype(np.int8)
-    # y2[cond] = -1
-    
-    # cond2 = y == 11
-    # y[cond2] = 110.0
-    # y2[cond2] = 110.0
-    
-    # inv = np.invert(cond)
-    # y2[inv] = 110.0
-    
-    
-    # cond = y == 11  # in general, a boolean expression is required
-    # y[cond] = float('NaN')
-    # plotmap_ESA2(y)
+
     plot_scene(None, y, y2, None)
-    
-    # mask4 = y == 4
-    # mask11 = y != 11
-    # y[mask4] = 10
-    # y[mask11] = 50
-    
-    # grid search -> add hyperparams
-    # grid_search give me next params
-    
-    # for 
-    # for
-    
-    # hyperparams(map -> )
-    
-    # bayesian wait
-    # await gpu
-    # fetch gpu, bayesian get next prams
-    # gpu run params
-
-
-
-    # for i in range(0, 11):
-    #     mask = y == i
-    #     print(np.count_nonzero(mask))
-    # 
-    # # print(np.count_nonzero(mask4))
-    # # print(np.count_nonzero(mask11))
-    # print("accuracy is ", (np.count_nonzero(mask4) / np.count_nonzero(mask11)))
-    # 
-    # 
-    # # plotmap_ESA2(y)
-    # plot_scene(None, y, y, None)
-    # file.close()
 
 

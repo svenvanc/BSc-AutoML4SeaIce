@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Train function for models. Data is loaded using ASIP2Dataset. Validated using validate.py."""
 
 # -- File info -- #

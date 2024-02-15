@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """Visualization functions."""
 
 # -- File info -- #
@@ -15,15 +12,11 @@ __date__ = '2021-11-04'
 import os
 
 # -- Third-party modules -- #
-import matplotlib as mpl
 import numpy as np
-import pandas as pd
-import xarray as xr
 from matplotlib import pyplot as plt
-from tqdm import tqdm
 
 # -- Proprietary modules -- #
-from functions.utils import MONTHS, REGIONS, check_nc_files, convert_polygon_icechart, estimate_coefficient
+from functions.utils import MONTHS, REGIONS
 
 SIC_STRING = 'Sea Ice Concentration [%]'
 

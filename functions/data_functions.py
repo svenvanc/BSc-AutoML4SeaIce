@@ -19,7 +19,6 @@ import os
 
 # -- Third-party modules -- #
 import numpy as np
-# import torch
 import xarray as xr
 from tqdm import tqdm
 
@@ -104,11 +103,10 @@ def get_scene_lists(scene_name_orig: bool = False):
     validate_list : List[str]
         List of scene names used for validation.
     """
-    # List of the training and validate scenes
-    # train_list = np.loadtxt('./datalists/train_list.txt', dtype=str)
+    # TODO new: remove hardcoded lines
     train_list = np.loadtxt('./datalists/train_alice.txt', dtype=str)
-    # validate_list = set(np.loadtxt('./datalists/validate_list.txt', dtype=str))
     validate_list = set(np.loadtxt('./datalists/validate_alice.txt', dtype=str))
+
     # - Add extra validation scenes
     if 'validate_list_extra.txt' in os.listdir('./datalists'):
         validate_list |= set(np.loadtxt('./datalists/validate_list_extra.txt', dtype=str))
@@ -291,8 +289,6 @@ def get_bins_weight(options: dict):
 
         bins_w = np.true_divide(bins_total.sum(), (options['n_classes'][options['chart']] - 1) * bins_total,
                                 out=bins_w, where=bins_total != 0)
-
-        # bins_w = torch.from_numpy(bins_w).to(torch.float32) #Todo off
         bins_w /= bins_w.sum()
 
         with np.printoptions(precision=8, suppress=True):
@@ -300,8 +296,6 @@ def get_bins_weight(options: dict):
 
     elif not options['loss_weighted']:
         bins_w = None
-        # bins_w = torch.ones(options['n_classes'][options['chart']]) #Todo off
-        # bins_w[options['class_fill_values'][options['chart']]] = 0
         print('Weight bins is', colour_str(None, 'orange'))
 
     else:
@@ -311,28 +305,3 @@ def get_bins_weight(options: dict):
 
     return bins_w
 
-
-def labels_to_one_hot(options: dict, labels):
-    """
-    Convert labels to one-hot-encoded format.
-    Parameters
-    ----------
-    options : dict
-        Dictionary with options for the training environment.
-    labels :
-        ndTensor, true examples with dimensions (batch, height, width).
-
-    Returns
-    -------
-    labels
-        One-hot-encoded with dimensions (batch, n_classes, height, width).
-    """
-    # (batch, height, # width, n_classes)
-    # labels = torch.nn.functional.one_hot(labels, #Todo off
-    #                                      num_classes=options['n_classes'][options['chart']])
-
-    # (batch, n_classes, height, width)
-    # labels = labels.permute(0, 3, 1, 2).type(torch.float)  #Todo off
-
-    labels = None
-    return labels
