@@ -7,9 +7,10 @@ from os import listdir
 import numpy as np
 import xarray as xr
 
-# TODO new: dont hardcode paths
-read_path = '/home/s2358093/data1/seaice_preprocessed'
-write_path = '/home/s2358093/data1/seaice_npy'
+from init import OPTIONS
+
+read_path = OPTIONS['path_to_processed_data']
+write_path = OPTIONS['path_to_npy_data']
 
 SAR_VARIABLES = ['sar_primary', 'sar_secondary']
 NERSC_VARIABLES = ['nersc_sar_primary', 'nersc_sar_secondary']

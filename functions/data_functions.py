@@ -103,7 +103,6 @@ def get_scene_lists(scene_name_orig: bool = False):
     validate_list : List[str]
         List of scene names used for validation.
     """
-    # TODO new: remove hardcoded lines
     train_list = np.loadtxt('./datalists/train_alice.txt', dtype=str)
     validate_list = set(np.loadtxt('./datalists/validate_alice.txt', dtype=str))
 

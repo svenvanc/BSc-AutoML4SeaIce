@@ -26,6 +26,7 @@ OPTIONS = {
     # -- Paths to data
     'path_to_data': '/home/s2358093/data1/seaice_source',
     'path_to_processed_data': '/home/s2358093/data1/seaice_preprocessed',
+    'path_to_npy_data': '/home/s2358093/data1/seaice_npy'
 
     # -- Training options -- #
     'patch_size': 768,  # crop size for patches used in training
