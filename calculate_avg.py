@@ -1,6 +1,6 @@
 """
-Calculated the mean of the training files, then uses this mean (and the rounded value of this mean)
-as a prediction for the validate files.
+Calculates the mean of the training files, then uses this mean (and the rounded value of this mean)
+as a prediction for the validate files. Afterwards some statistics from this prediction are printed.
 
 Files are read using the data paths set in init.py
 
@@ -26,6 +26,8 @@ from init import OPTIONS
 
 
 def remove_land_values(y_actual):
+    """Flattens input and removes land values (class 11) from input"""
+
     # flatten the map dimensions (the first two dimensions)
     y_actual = [item for sublist in y_actual for item in sublist]
 
@@ -33,6 +35,8 @@ def remove_land_values(y_actual):
 
 
 def calculate_mean(options):
+    """Calculates the mean of the training files"""
+
     dataset = InfDataset(files=options['train_list'], options=options)
 
     batch_means = []
@@ -55,6 +59,18 @@ def calculate_mean(options):
 
 
 def predict(options, prediction):
+    """
+            Use one value as prediction for all scenes. Then return some statistics about this prediction.
+
+            Parameters
+            ----------
+            options: the options from the init.py file
+            prediction : int
+
+            Returns
+            -------
+            r2, rounded_r2, rmse, rounded_rmse, accuracy:
+            """
     dataset = InfDataset(files=options['validate_list'], options=options)
 
     # Validate mean
@@ -104,6 +120,8 @@ def predict(options, prediction):
 
 
 def main(options: dict):
+    """Prints statistics about the mean prediction calculated in sub methods"""
+
     # Get training and validation scene list
     options['train_list'], options['validate_list'] = get_scene_lists()
 

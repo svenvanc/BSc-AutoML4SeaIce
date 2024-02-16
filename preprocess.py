@@ -1,7 +1,6 @@
-# !/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""Function to preprocess ASIP2 scenes."""
+"""
+Function to preprocess ASIP2 scenes.
+"""
 
 # -- File info -- #
 __author__ = 'Andreas R. Stokholm'
@@ -43,16 +42,11 @@ def main():
 
     dirlist = glob.glob(os.path.join(OPTIONS['path_to_data'], '*.nc'))
 
-    # print("1")
-    # print(dirlist)
-
     # - Ignore files which were already processed
     dirlist = [file for file in dirlist if
                os.path.split(file)[-1][:15] + '_pro.nc' not in os.listdir(OPTIONS['path_to_processed_data'])
                or
                os.path.split(file)[-1][:15] + '_bins.npy' not in os.listdir('misc/scene_pro_bins')]
-
-    # print("2")
 
     if not len(dirlist):
         print('No scenes to process.')
@@ -64,20 +58,15 @@ def main():
                                          pixel_spacing=OPTIONS['pixel_spacing'],
                                          n_classes=OPTIONS['n_classes'])
 
-    # print("3")
-
     run_preprocess = DataLoader(preprocess_fast,
                                 batch_size=None,
                                 num_workers=NUM_WORKERS,
                                 shuffle=False,
                                 collate_fn=collate_function)
 
-    # print("4")
-
     # Process the scenes
     for scene, bins in tqdm(iterable=run_preprocess, total=len(dirlist), colour='green'):
         # - Check if the scenes' extreme values lie within the desired normalized range
-        # print("5")
 
         for variable in SCENE_VARIABLES[:5]:
             scene_min = np.min(scene[variable].values)
@@ -94,12 +83,9 @@ def main():
             elif np.isnan(np.sum(scene[variable])):
                 print('NaN in', colour_str(scene.scene_id, 'purple'))
 
-        # print("6")
         # - Save the processed scene and the bins
         scene.to_netcdf(os.path.join(OPTIONS['path_to_processed_data'], scene.attrs['scene_id']))
-        # print("7")
         np.save('misc/scene_pro_bins/' + scene.attrs['scene_id'][:15] + '_bins', bins, allow_pickle=True)
-        # print("8")
 
 
 if __name__ == '__main__':

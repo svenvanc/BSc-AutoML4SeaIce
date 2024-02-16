@@ -23,10 +23,13 @@ os.makedirs('misc/scene_pro_bins/', exist_ok=True)
 
 # Model Training options
 OPTIONS = {
+    # -- Path to project
+    'project_path': '/home/example_path/AutoML4SeaIce',
+
     # -- Paths to data
-    'path_to_data': '/home/s2358093/data1/seaice_source',
-    'path_to_processed_data': '/home/s2358093/data1/seaice_preprocessed',
-    'path_to_npy_data': '/home/s2358093/data1/seaice_npy'
+    'path_to_data': '/home/example_path/seaice_source',
+    'path_to_processed_data': '/home/example_path/seaice_preprocessed',
+    'path_to_npy_data': '/home/example_path/seaice_npy',
 
     # -- Training options -- #
     'patch_size': 768,  # crop size for patches used in training

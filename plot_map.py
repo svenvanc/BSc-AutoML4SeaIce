@@ -1,15 +1,7 @@
 """
-Calculated the mean of the training files, then uses this mean (and the rounded value of this mean)
-as a prediction for the validate files.
-
-Files are read using the data paths set in init.py
-
-Prints the following statistics:
-    - R2
-    - RMSE
-    - rounded R2 (uses rounded mean)
-    - rounded RMSE (uses rounded mean)
-    - accuracy (uses rounded mean)
+This file is to be used as a template for creating custom map plots. The file contains functions for plotting both
+.nc files and .npy files. At the bottum of the script some example functions are given of how to mask out certain values
+for a custom plot.
 """
 
 # -- Third-party modules -- #
@@ -66,10 +58,6 @@ def plotmap_ESA2(values):
     ncolor = OPTIONS['cmap'][OPTIONS['chart']].N
     norm = colors.BoundaryNorm(arranged - 0.5, ncolor)  # Get colour boundaries. -0.5 to center ticks for each color.
 
-    # cbar = plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=OPTIONS['cmap'][OPTIONS['chart']]), ticks=arranged, fraction=0.0485, pad=0.049, ax=ax)
-    # cbar.set_label(label=OPTIONS['ICE_STRINGS']['SIC'])
-    # cbar.set_ticklabels(list(SIC_GROUPS.values()))
-
     cmap = OPTIONS['cmap'][OPTIONS['chart']]
     cmap = cmap.with_extremes(over='white')  # class 11 ==> unknown
     cb = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap),
@@ -82,18 +70,6 @@ def plotmap_ESA2(values):
                       )
     cb.set_label(label=ICE_STRINGS['SIC'])
     cb.set_ticklabels(list(SIC_GROUPS.values()))
-
-    # plt.title(ICE_STRINGS['SIC'])
-
-    # cb = plt.cm.ScalarMappable(norm=norm, cmap=OPTIONS['cmap'][OPTIONS['chart']])
-    # cb.set_clim((0., 100.))
-    # plt.gcf().colorbar(cb, location="bottom", drawedges="True")
-
-    # title = 'Sea Ice Concentration [%]'
-    # plt.title(title)
-
-    # show_pixel_count(options)
-    # show_chart_colorbar(options, options['chart'])
 
     # dpi = 512
     dpi = 128
@@ -192,43 +168,40 @@ def plot_scene(x, y, prediction, name):
     plt.close('all')
 
 
+def plot_nc_example():
+    name = '20181217T210415_pro.nc'
+    name = '20181212T205512-y.npy'
+    ds_train = xr.open_dataset('/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/preprocessed/' + name)
+    values = ds_train['SIC'].values
+    cond = values == 11  # in general, a boolean expression is required
+    values[cond] = float('NaN')
+    plotmap_ESA2(values)
 
-if __name__ == '__main__':
-    # # name = '20180910T081714_pro.nc'
-    # name = '20181217T210415_pro.nc'
-    # name = '20181212T205512-y.npy'
-    # ds_train = xr.open_dataset('/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/preprocessed/' + name)
-    # values = ds_train['SIC'].values
-    # cond = values == 11  # in general, a boolean expression is required
-    # values[cond] = float('NaN')
-    # plotmap_ESA2(values)
 
-    # name = "20180607T184226"
-    # file = open("/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/" + name + ".txt", "r+")
-    # predarr = np.loadtxt(file)
-
-    # name = '20181212T205512-y.npy'
-    # ds_train = xr.open_dataset('/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/preprocessed/' + name)
-    # values = ds_train['SIC'].values
-    # cond = values == 11  # in general, a boolean expression is required
-    # values[cond] = float('NaN')
-    # plotmap_ESA2(values)
-
+def plot_npy_example():
     name = '20181212T205512-y.npy'
     y = np.load(name)
     y2 = np.load(name)
     namex = '20181212T205512-nersc-x.npy'
     x = np.load(namex)
 
+    # cond is a mask where all values are 0.0 for the first sar value
     cond = x == 0.0
     cond = cond[:, :, 0]
 
+    # cond2 is a mask where all values are 0.0 for the second sar value
     cond2 = x == 0.0
     cond2 = cond2[:, :, 1]
 
+    # All values where either of the conditions are true will be set to a value outside the range of 0-100
     y[cond] = 110.0
     y2[cond2] = 110.0
 
     plot_scene(None, y, y2, None)
+
+
+if __name__ == '__main__':
+    plot_nc_example()
+    plot_npy_example()
 
 

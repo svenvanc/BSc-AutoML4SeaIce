@@ -15,6 +15,8 @@ from keras import models, layers
 from keras import backend as K
 from keras_tuner.engine import trial as trial_module
 
+from init import OPTIONS
+
 load_dotenv()  # take environment variables from .env.
 
 project_name = 'r2_large_experiment'
@@ -55,7 +57,7 @@ def get_scene_lists(scene_name_orig: bool = False):
         val_files = val_files.split('\n')
         return train_files, val_files
 
-    list_path = '/home/s2358093/AutoML4SeaIce/datalists'
+    list_path = OPTIONS['project_path'] + '/datalists'
 
     train_list = np.loadtxt(list_path + '/train_alice.txt', dtype=str)
     validate_list = set(np.loadtxt(list_path + '/validate_alice.txt', dtype=str))
@@ -162,6 +164,8 @@ N_VAL_PATCHES = int(os.getenv('N_VAL_PATCHES'))
 
 
 def calculate_patches(rows, cols, patch_size):
+    '''Calulates the start position of the row and column for the patches and returns this in a tuple'''
+
     n_patches_rows = 1 + ((rows - 1) // patch_size)
     n_patches_cols = 1 + ((cols - 1) // patch_size)
 
