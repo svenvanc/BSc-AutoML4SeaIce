@@ -51,6 +51,8 @@ library and its dependencies.
 Please configure the following variables:
   - `PATH_TO_DATA`
   - `OUTPUT_DIR`
+  - `INPUT_TYPE`
+  - `EXP_NAME`
   
 
 
@@ -110,6 +112,7 @@ with its corresponding script `kerasTuner-20-get-resutls.slurm`. The following d
 ### Printing statistics:
 After the results have been processed the statistics can be read. This is done with the file `stats.py`
 with its corresponding script `stats.slurm`. This script will print statistics and plot maps based on the predictions.
+Before running the script set the `INPUT_TYPE` and `EXP_NAME` variables in the `.env` file.
 
 ### Plot maps:
 with the file `plot_map.py` more custom plots can be made. This is to be used as a template to create your own custom plots. 

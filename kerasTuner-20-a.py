@@ -180,7 +180,10 @@ MAX_TRIALS = int(os.getenv('MAX_TRIALS'))
 N_TRAIN_PATCHES = int(os.getenv('N_TRAIN_PATCHES'))
 N_VAL_PATCHES = int(os.getenv('N_VAL_PATCHES'))
 
+
 def calculate_patches(rows, cols, patch_size):
+    '''Calulates the start position of the row and column for the patches and returns this in a tuple'''
+
     n_patches_rows = 1 + ((rows - 1) // patch_size)
     n_patches_cols = 1 + ((cols - 1) // patch_size)
 
@@ -210,6 +213,8 @@ def calculate_patches(rows, cols, patch_size):
 
 
 def load_files_py(file_name_tensor, data_dir_tensor, patch_size_tensor, load_data_randomly_tensor, noise_reduction_tensor, shuffle_tensor):
+    '''Returns a batch of pathes. Each patch is a 2D npy array'''
+
     file_name = str(file_name_tensor.numpy(), 'utf-8')
     data_dir = str(data_dir_tensor.numpy(), 'utf-8')
     noise_reduction = str(noise_reduction_tensor.numpy(), 'utf-8')
@@ -267,6 +272,8 @@ def load_files_py(file_name_tensor, data_dir_tensor, patch_size_tensor, load_dat
 
 
 def extract_patch(x, y, patch, patch_size):
+    '''Tries to extract a single patch from x and from y, of size patch_size and at location patch'''
+
     row_start, col_start = patch
     row_end = row_start + patch_size
     col_end = col_start + patch_size
@@ -282,8 +289,7 @@ def extract_patch(x, y, patch, patch_size):
     y1[y1 == 255] = 11
 
     # - Discard patches with too many meaningless pixels (optional) - 10% pixels with data at least needed.
-
-    if (y1 != 11).sum() < (patch_size * patch_size) / 10:  # TODO change into var
+    if (y1 != 11).sum() < (patch_size * patch_size) / 10:
         return None, None
 
     y1 = np.expand_dims(y1, axis=-1)
@@ -294,19 +300,22 @@ def extract_patch(x, y, patch, patch_size):
 
 
 class WeightsAdder:
+    '''The WeightsAdder class is used to add weights to the loss of the model, this way certain classes can have 
+    different weights applied to them'''
     def __init__(self, weights):
         class_weights = tf.constant(weights)
         self.class_weights = class_weights / tf.reduce_sum(class_weights)
 
     def add_sample_weights(self, image, label):
-        # Create an image of `sample_weights` by using the label at each pixel as an
-        # index into the `class weights` .
+        '''Create an image of `sample_weights` by using the label at each pixel as an index into the `class weights`'''
+
         sample_weights = tf.gather(self.class_weights, indices=tf.cast(label, tf.int32))
 
         return image, label, sample_weights
 
 
 def set_shapes_factory(patch_size):
+    '''Returns a function which can set the size of a patch x and patch y to patch_size'''
     def set_shapes(x, y):
         x.set_shape((patch_size, patch_size, 2))
         y.set_shape((patch_size, patch_size, 1))
@@ -316,6 +325,7 @@ def set_shapes_factory(patch_size):
 
 
 def set_shapes_with_weights_factory(patch_size):
+    '''Returns a function which can set the size of a patch x and patch y to patch_size, but allowing for weights'''
     def set_shapes(x, y, weights):
         x.set_shape((patch_size, patch_size, 2))
         y.set_shape((patch_size, patch_size, 1))
@@ -326,6 +336,8 @@ def set_shapes_with_weights_factory(patch_size):
 
 
 def patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reduction, shuffle):
+    '''Returns a function which can load patches'''
+
     def patch_loader(file_name):
         return tf.py_function(load_files_py, inp=[file_name, data_dir, patch_size, load_data_randomly, noise_reduction, shuffle],
                               Tout=(
@@ -336,6 +348,8 @@ def patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reducti
 
 
 def get_data_set(data_dir, file_list, patch_size, n_samples=None, load_data_randomly=False, noise_reduction='sar', apply_weights='None', shuffle=False):
+    '''Retrieves a dataset and sets the weights for the dataset if needed'''
+
     patch_loader = patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reduction, shuffle)
     set_shapes = set_shapes_factory(patch_size)
     set_shapes_with_weights = set_shapes_with_weights_factory(patch_size)
@@ -372,8 +386,11 @@ def double_conv_block(x, n_filters):
 
 
 def downsample_block(x, n_filters, dropout):
+    # Conv2D twice with ReLU activation
     f = double_conv_block(x, n_filters)
+    # max pooling downsample
     p = layers.MaxPool2D(2)(f)
+    # dropout
     p = layers.Dropout(dropout)(p)
 
     return f, p
@@ -392,6 +409,7 @@ def upsample_block(x, conv_features, n_filters, dropout):
 
 
 class R2_Score(tf.keras.metrics.Metric):
+    '''Custom class for the R2 score'''
 
     def __init__(self, mean, name="sparse_r_squared", **kwargs):
         super(R2_Score, self).__init__(name=name, **kwargs)
@@ -400,6 +418,8 @@ class R2_Score(tf.keras.metrics.Metric):
         self.sum_of_tss = self.add_weight(name="sum_of_tss", initializer="zeros")
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        '''Updates the R2 score with a new prediction and lable'''
+
         # From softmax output to labels
         y_pred_labels = tf.argmax(y_pred, -1, output_type=tf.int32)
         y_pred_labels = tf.expand_dims(y_pred_labels, -1)
@@ -425,10 +445,13 @@ class R2_Score(tf.keras.metrics.Metric):
         self.sum_of_tss.assign_add(tss)
 
     def result(self):
+        '''Calculates and returns the R2 score'''
         return 1 - self.sum_of_rss / self.sum_of_tss
 
 
 def calc_mean():
+    '''Calculates the mean of a the dataset'''
+
     patch_size = 768
     batch_size = 16
 
@@ -460,11 +483,15 @@ def calc_mean():
 
 
 class MyHyperModel(kt.HyperModel):
+    '''This class can build and fit a U-Net neural network'''
+
     def __init__(self, mean):
         super().__init__()
         self.mean = mean
 
     def build(self, hp):
+        '''This function builds and returns a custom U-Net neural network given a set of hyperparameters'''
+
         image_size = (None, None)
         n_channels = len(SAR_VARIABLES)
         inputs = keras.Input(shape=(image_size[0], image_size[1], n_channels))
@@ -517,6 +544,7 @@ class MyHyperModel(kt.HyperModel):
         return unet_model
 
     def fit(self, hp, model, *args, **kwargs):
+        '''This function fits a dataset to a model'''
 
         # Values has to be at least 1 value but remains unused. The value from the build function is used.
         patch_size = 768
@@ -541,6 +569,7 @@ class MyHyperModel(kt.HyperModel):
 
 
 class CustomBayesianSearch(kt.BayesianOptimization):
+    '''A custom Bayesian search algorithm based on the KerasTuner Bayesian search.'''
 
     def search(self, *fit_args, **fit_kwargs):
         """Performs a search for best hyperparameter configuations.

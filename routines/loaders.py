@@ -205,8 +205,9 @@ class ASIP2Dataset:
                     # -- Update the index
                     sample_n += len(scene_patches)
 
-        # TODO new could do a data augment
-        # Augment patches
+        #TODO:
+        # In the future more methods like data augmentation can be added. One of the ways to start implementing this
+        # could be with the following sub method:
         # patches = self.data_augment(patches)
 
         # Prepare training arrays
@@ -288,7 +289,6 @@ class InfDataset:
         x, y, mask = self.prep_scene(scene)
         name = self.files[idx]
 
-        # Todo is this necessary? -> needs testing
         scene.close()
         return x, y, mask, name, flip
 

@@ -19,7 +19,7 @@ from init import OPTIONS
 
 load_dotenv()  # take environment variables from .env.
 
-project_name = 'r2_large_experiment'
+project_name = os.getenv('PROJ_NAME')
 
 print(tf.__version__, flush=True)
 root_dir = os.getenv('OUTPUT_DIR')
@@ -298,8 +298,7 @@ def extract_patch(x, y, patch, patch_size):
     y1[y1 == 255] = 11
 
     # - Discard patches with too many meaningless pixels (optional) - 10% pixels with data at least needed.
-
-    if (y1 != 11).sum() < (patch_size * patch_size) / 10:  # TODO change into var
+    if (y1 != 11).sum() < (patch_size * patch_size) / 10:
         return None, None
 
     y1 = np.expand_dims(y1, axis=-1)
@@ -310,6 +309,8 @@ def extract_patch(x, y, patch, patch_size):
 
 
 def load_files_py(file_name_tensor, data_dir_tensor, patch_size_tensor, load_data_randomly_tensor, noise_reduction_tensor, shuffle_tensor):
+    '''Returns a batch of pathes. Each patch is a 2D npy array'''
+
     file_name = str(file_name_tensor.numpy(), 'utf-8')
     data_dir = str(data_dir_tensor.numpy(), 'utf-8')
     noise_reduction = str(noise_reduction_tensor.numpy(), 'utf-8')
@@ -367,6 +368,8 @@ def load_files_py(file_name_tensor, data_dir_tensor, patch_size_tensor, load_dat
 
 
 def patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reduction, shuffle):
+    '''Returns a function which can load patches'''
+
     def patch_loader(file_name):
         return tf.py_function(load_files_py, inp=[file_name, data_dir, patch_size, load_data_randomly, noise_reduction, shuffle],
                               Tout=(
@@ -377,19 +380,24 @@ def patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reducti
 
 
 class WeightsAdder:
+    '''The WeightsAdder class is used to add weights to the loss of the model, this way certain classes can have 
+        different weights applied to them'''
+
     def __init__(self, weights):
         class_weights = tf.constant(weights)
         self.class_weights = class_weights / tf.reduce_sum(class_weights)
 
     def add_sample_weights(self, image, label):
-        # Create an image of `sample_weights` by using the label at each pixel as an
-        # index into the `class weights` .
+        '''Create an image of `sample_weights` by using the label at each pixel as an index into the `class weights`'''
+
         sample_weights = tf.gather(self.class_weights, indices=tf.cast(label, tf.int32))
 
         return image, label, sample_weights
 
 
 def get_data_set(data_dir, file_list, patch_size, n_samples=None, load_data_randomly=False, noise_reduction='sar', apply_weights='None', shuffle=False):
+    '''Retrieves a dataset and sets the weights for the dataset if needed'''
+
     patch_loader = patch_loader_factory(data_dir, patch_size, load_data_randomly, noise_reduction, shuffle)
     set_shapes = set_shapes_factory(patch_size)
     set_shapes_with_weights = set_shapes_with_weights_factory(patch_size)
@@ -417,6 +425,8 @@ def get_data_set(data_dir, file_list, patch_size, n_samples=None, load_data_rand
 
 
 def calc_mean():
+    '''Calculates the mean of a the dataset'''
+
     patch_size = 768
     batch_size = 16
 
@@ -449,7 +459,11 @@ def calc_mean():
 
 
 class MyHyperModel(kt.HyperModel):
+    '''This class can build and fit a U-Net neural network'''
+
     def build(self, hp):
+        '''This function builds and returns a custom U-Net neural network given a set of hyperparameters'''
+
         image_size = (None, None)
         # image_size=(PATCH_SIZE, PATCH_SIZE)
         n_channels = len(SAR_VARIABLES)
@@ -459,7 +473,7 @@ class MyHyperModel(kt.HyperModel):
         learning_rate = hp.Choice(name='learning_rate', values=[0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1])
         dropout = hp.Choice(name='dropout', values=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
         max_layer_size = hp.Choice(name='max_layer_size', values=[32, 64, 128])
-        hp.Choice(name='patch_size', values=[768])      #Todo uit hp.choice halen
+        hp.Choice(name='patch_size', values=[768])
         hp.Choice(name='batch_size', values=[16])
         hp.Choice(name='load_data_randomly', values=[False, True])
         hp.Choice(name='noise_reduction', values=['sar', 'nersc'])
@@ -508,6 +522,7 @@ class MyHyperModel(kt.HyperModel):
 
 
 class CustomBayesianSearch(kt.BayesianOptimization):
+    '''A custom Bayesian search algorithm based on the KerasTuner Bayesian search.'''
 
     def search(self, *fit_args, **fit_kwargs):
         """Performs a search for best hyperparameter configuations.

@@ -31,6 +31,9 @@ OPTIONS = {
     'path_to_processed_data': '/home/example_path/seaice_preprocessed',
     'path_to_npy_data': '/home/example_path/seaice_npy',
 
+    # -- Path to result directory
+    'path_to_results': '/home/example_path/results',
+
     # -- Training options -- #
     'patch_size': 768,  # crop size for patches used in training
     'batch_size': 32,  # number of patches for each forward/backward pass

@@ -15,12 +15,14 @@ from init import OPTIONS
 
 
 experiment_name = os.getenv('EXP_NAME')
+project_name = os.getenv('PROJ_NAME')
 input_type = os.getenv('INPUT_TYPE')
 print("Python file, the experiment name is: ", experiment_name, ".")
 print("Python file, the data type is: ", input_type, ".")
 
-path_to_data = '/home/s2358093/data1/seaice_npy'
-path_to_image_storing = '/home/s2358093/data1/res_sven/images/multiple_r2_experiments/' + experiment_name
+path_to_data = OPTIONS['path_to_npy_data']
+path_to_image_storing = OPTIONS['path_to_results'] + '/images/' + project_name + '/' + experiment_name
+path_to_prediction_storing = OPTIONS['path_to_results'] + '/predictions/' + project_name + '/' + experiment_name
 
 validate_names = [
     "20180315T184323",
@@ -68,7 +70,10 @@ ICE_STRINGS = {
     'FLOE': 'Floe Size'
 }
 
+
 def get_patch(x, y):
+    '''Function returns a signle patch from location x, y'''
+
     n_rows, n_cols = y.shape
 
     rows_to_add = 0
@@ -86,6 +91,8 @@ def get_patch(x, y):
 
 
 def get_prediction(model, x):
+    '''This function returns a model prediction y, based on an input x'''
+
     predictions = model.predict(x)
     predictions = np.squeeze(predictions)
     predictions = np.argmax(predictions, axis=2)
@@ -93,6 +100,8 @@ def get_prediction(model, x):
 
 
 def apply_unknown_mask_to_y(x, y):
+    '''This function masks y values to class 11 (land values) that have corresponding x values which are invalid'''
+
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
     mask = np.squeeze(mask)
@@ -101,6 +110,7 @@ def apply_unknown_mask_to_y(x, y):
 
 
 def apply_unknown_mask_to_y_to_255(x, y):
+    '''This function masks y values to value 255 that have corresponding x values which are invalid'''
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
     mask = np.squeeze(mask)
@@ -109,6 +119,9 @@ def apply_unknown_mask_to_y_to_255(x, y):
 
 
 def save_prediction(prediction, land_values_mask, name, column_size):
+    '''Sets the land values of a prediction to NaN, reshapes it to a 2D shape based on column_size, then saves
+    it with a certain name.'''
+
     prediction = prediction.astype(float)
     prediction[land_values_mask] = float('NaN')
 
@@ -116,7 +129,7 @@ def save_prediction(prediction, land_values_mask, name, column_size):
     col = column_size
     prediction_2D = np.reshape(prediction, (row, col))
 
-    file = open("/home/s2358093/data1/tmp/" + name + ".txt", "w+")
+    file = open(path_to_prediction_storing + name + ".txt", "w+")
 
     np.savetxt(file, prediction_2D)
     file.close()
@@ -124,6 +137,8 @@ def save_prediction(prediction, land_values_mask, name, column_size):
 
 
 def plot_scene(x, y, prediction, name):
+    '''A plotting function based on .npy file inputs. Plots a scene given input x, and target y, a prediction y and a name.'''
+
     fig, axs = plt.subplots(nrows=1, ncols=2)
 
     apply_unknown_mask_to_y(x, y)
@@ -169,6 +184,9 @@ def plot_scene(x, y, prediction, name):
 
 
 def calc_r2(actual, prediction, mean):
+    '''Prints the R2 score based on target values `actual` and their prediction. Returns the rss and tss needed to make
+    an R2 calculation.'''
+
     rss = np.sum((actual - prediction) ** 2)
     tss = np.sum((actual - mean) ** 2)
 
@@ -181,6 +199,9 @@ def calc_r2(actual, prediction, mean):
 
 
 def generate_stats(model, file_name, mean):
+    '''Returns statistics about a .npy file given a filename and a model. Returns the number of datapoints, 
+    the rss and tss needed to calculate the R2 score and returns the accuracy.'''
+
     full_file_name = os.path.join(path_to_data, file_name)
 
     x = np.load(full_file_name + f'-{input_type}-x.npy')
@@ -200,8 +221,6 @@ def generate_stats(model, file_name, mean):
     predictions_flattened = predictions.flatten()
     print(predictions_flattened.shape, flush=True)
 
-
-    # TODO can't mask with predictions (model predicts 11)
     predictions_flattened = predictions_flattened[y1_flattened != 11]
     y1_flattened = y1_flattened[y1_flattened != 11]
     print(predictions_flattened.shape, flush=True)
@@ -236,6 +255,7 @@ print("The mean is: ", mean, flush=True)
 
 
 def calc_model(model):
+    '''Calculates and prints the performance of a model. Prints the accuracy, rmse and R2 score.'''
 
     if not os.path.exists(path_to_image_storing):
         os.makedirs(path_to_image_storing)
@@ -261,5 +281,6 @@ def calc_model(model):
     print("\nThe total R2 score is: ", r2, flush=True)
 
 
-unet_model = keras.models.load_model('/home/s2358093/data1/res_sven/model_results/multiple_r2_experiments/' + experiment_name, compile=False)
+unet_model = keras.models.load_model(OPTIONS['path_to_results'] + '/model_results/'
+                                     + project_name + '/' + experiment_name, compile=False)
 calc_model(unet_model)

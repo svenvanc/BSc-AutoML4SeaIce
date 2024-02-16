@@ -35,7 +35,10 @@ ICE_STRINGS = {
     'FLOE': 'Floe Size'
 }
 
-def plotmap_ESA2(values):
+
+def plotmap_ESA2(values, modelname):
+    '''A plotting function based on .nc file inputs'''
+
     fig, axs = plt.subplots(nrows=1, ncols=2,
                             # figsize=(12, 8)
                             )
@@ -74,7 +77,6 @@ def plotmap_ESA2(values):
     # dpi = 512
     dpi = 128
 
-    modelname = "./test.png"
     fig.savefig(modelname,
                        dpi=dpi,
                        format='png',
@@ -85,51 +87,27 @@ def plotmap_ESA2(values):
 
 
 def apply_unknown_mask_to_y(x, y):
+    '''This function masks y values to class 11 (land values) that have corresponding x values which are invalid'''
+
     mask = x == 0.0
     mask = mask[:, :, :, 0:1]
+    # mask = mask[:, :, :, 1:2]
     mask = np.squeeze(mask)
-
     y[mask] = 11
 
 
-def apply_unknown_mask_to_y_to_255(x, y):
-    mask = x == 0.0
-    mask = mask[:, :, :, 0:1]
-    mask = np.squeeze(mask)
+def plot_scene(x, y, prediction, model_name):
+    '''A plotting function based on .npy file inputs. Plots a scene given input x, and target y, a prediction y and a name.'''
 
-    y[mask] = 255
-
-
-def save_prediction(prediction, land_values_mask, name, column_size):
-    prediction = prediction.astype(float)
-    prediction[land_values_mask] = float('NaN')
-
-    row = int(len(prediction) / column_size)
-    col = column_size
-    prediction_2D = np.reshape(prediction, (row, col))
-
-    file = open("/home/s2358093/data1/tmp/" + name + ".txt", "w+")
-
-    np.savetxt(file, prediction_2D)
-    file.close()
-    return
-
-
-def plot_scene(x, y, prediction, name):
     fig, axs = plt.subplots(nrows=1, ncols=2)
 
-    # apply_unknown_mask_to_y(x, y)
-    # apply_unknown_mask_to_y(x, prediction)
+    if x is not None:
+        apply_unknown_mask_to_y(x, y)
+        apply_unknown_mask_to_y(x, prediction)
 
     cmap = OPTIONS['cmap'][OPTIONS['chart']]
-    # cmap = cmap.set_extremes(under="black", over="white")
-    # cmap = cmap.with_extremes(over='white')  # class 11 ==> unknown
-    # cmap = cmap.with_extremes(under='black')  # class 11 ==> unknown
     cmap.set_under("black")
     cmap.set_over("white")
-    # cmap.set_bad('black')
-    # cmap.set_over(110.0)
-    # cmap.set_under(120.0)
 
     axs[0].imshow(y, vmin=OPTIONS['vmin'][OPTIONS['chart']], vmax=OPTIONS['vmax'][OPTIONS['chart']],
                   cmap=cmap)
@@ -157,8 +135,6 @@ def plot_scene(x, y, prediction, name):
     cb.set_label(label=ICE_STRINGS['SIC'])
     cb.set_ticklabels(list(SIC_GROUPS.values()))
 
-    # model_name = os.path.join(path_to_image_storing, name + '.png')
-    model_name = "./test_1.png"
     fig.savefig(model_name,
                 dpi=128,
                 format='png',
@@ -169,21 +145,28 @@ def plot_scene(x, y, prediction, name):
 
 
 def plot_nc_example():
-    name = '20181217T210415_pro.nc'
-    name = '20181212T205512-y.npy'
-    ds_train = xr.open_dataset('/home/svenvanc/Universiteit_Leiden/Bachelor_Project/AutoML4SeaIce/preprocessed/' + name)
+    '''An example function that plots a map based on a .nc file'''
+
+    scene_name = '20181217T210415_pro.nc'
+    model_name = "./example.png"
+
+    ds_train = xr.open_dataset(OPTIONS['path_to_processed_data'] + scene_name)
     values = ds_train['SIC'].values
     cond = values == 11  # in general, a boolean expression is required
     values[cond] = float('NaN')
-    plotmap_ESA2(values)
+    plotmap_ESA2(values, model_name)
 
 
 def plot_npy_example():
-    name = '20181212T205512-y.npy'
-    y = np.load(name)
-    y2 = np.load(name)
-    namex = '20181212T205512-nersc-x.npy'
-    x = np.load(namex)
+    '''An example function that plots a map based on a .npy file'''
+
+    model_name = "./example.png"
+    name_x = '20181212T205512-nersc-x.npy'
+    name_y = '20181212T205512-y.npy'
+
+    y = np.load(name_y)
+    y2 = np.load(name_y)
+    x = np.load(name_x)
 
     # cond is a mask where all values are 0.0 for the first sar value
     cond = x == 0.0
@@ -197,7 +180,7 @@ def plot_npy_example():
     y[cond] = 110.0
     y2[cond2] = 110.0
 
-    plot_scene(None, y, y2, None)
+    plot_scene(None, y, y2, model_name)
 
 
 if __name__ == '__main__':
