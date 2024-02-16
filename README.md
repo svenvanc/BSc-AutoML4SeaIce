@@ -47,6 +47,7 @@ library and its dependencies.
   - `path_to_data` 
   - `path_to_processed_data`
   - `path_to_npy_data`
+  - `path_to_results`
 - The `.env` is used by the Bayesian optimisation process and the plotting and statistics scripts.
 Please configure the following variables:
   - `PATH_TO_DATA`
